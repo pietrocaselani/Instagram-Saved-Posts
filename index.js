@@ -12,6 +12,18 @@ const password = 'insert your password here';
 const device = new Client.Device(username);
 const storage = new Client.CookieMemoryStorage();
 
+const flatten = (ary) => {
+    var ret = [];
+    for(var i = 0; i < ary.length; i++) {
+        if(Array.isArray(ary[i])) {
+            ret = ret.concat(flatten(ary[i]));
+        } else {
+            ret.push(ary[i]);
+        }
+    }
+    return ret;
+}
+
 Client.Session.create(device, storage, username, password)
 	.then(function(session) {
         return new Client.Feed.SavedMedia(session, 100).all();
@@ -20,9 +32,18 @@ Client.Session.create(device, storage, username, password)
         const savedPosts = posts.map((post) => {
             const webLink = post.params.webLink;
             const caption = post.params.caption;
-            const imagesLink = post.params.images.map((image => {
-                return image.url;
-            }))
+
+            const findImagesUrl = (obj) => {
+                if (Array.isArray(obj)) {
+                    return obj.map( o => {
+                        return findImagesUrl(o);
+                    });
+                } else {
+                    return obj.url
+                }
+            }
+
+            const imagesLink = flatten(findImagesUrl(post.params.images));
 
             return new SavedPost(webLink, caption, imagesLink)
         });
