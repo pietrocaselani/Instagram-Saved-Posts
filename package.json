@@ -1,0 +1,15 @@
+{
+  "name": "instagram-saved-posts",
+  "version": "1.0.0",
+  "description": "Get saved posts from Instagram",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Pietro Caselani",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "instagram-private-api": "^0.6.2"
+  }
+}
