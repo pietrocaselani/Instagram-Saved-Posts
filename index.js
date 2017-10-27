@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 
 const fs = require('fs');
 const Promise = require('bluebird');
@@ -13,58 +13,60 @@ const device = new Client.Device(username);
 const storage = new Client.CookieMemoryStorage();
 
 const flatten = (ary) => {
-    var ret = [];
-    for(var i = 0; i < ary.length; i++) {
-        if(Array.isArray(ary[i])) {
-            ret = ret.concat(flatten(ary[i]));
-        } else {
-            ret.push(ary[i]);
-        }
+  let ret = [];
+  for (let i = 0; i < ary.length; i += 1) {
+    if (Array.isArray(ary[i])) {
+      ret = ret.concat(flatten(ary[i]));
+    } else {
+      ret.push(ary[i]);
     }
-    return ret;
-}
+  }
+  return ret;
+};
 
 Client.Session.create(device, storage, username, password)
-	.then(function(session) {
-        return new Client.Feed.SavedMedia(session, 100).all();
-	})
-	.then(posts => {
-        const savedPosts = posts.map((post) => {
-            const webLink = post.params.webLink;
-            const caption = post.params.caption;
+  .then((session) => {
+    return new Client.Feed.SavedMedia(session, 100).all();
+  })
+  .then((posts) => {
+    const savedPosts = posts.map((post) => {
+      const { webLink, caption } = post.params;
 
-            const findImagesUrl = (obj) => {
-                if (Array.isArray(obj)) {
-                    return obj.map( o => {
-                        return findImagesUrl(o);
-                    });
-                } else {
-                    return obj.url
-                }
-            }
+      const findImagesUrl = (obj) => {
+        if (Array.isArray(obj)) {
+          return obj.map((o) => {
+            return findImagesUrl(o);
+          });
+        }
+        return obj.url;
+      };
 
-            const imagesLink = flatten(findImagesUrl(post.params.images));
+      let imagesLink = flatten(findImagesUrl(post.params.images));
 
-            return new SavedPost(webLink, caption, imagesLink)
-        });
+      imagesLink = imagesLink.filter((obj, index) => {
+        return index % 2 === 0;
+      });
 
-        return new Promise((resolve, reject) => {
-            const path = __dirname + '/saved_posts.json'
+      return new SavedPost(webLink, caption, imagesLink);
+    });
 
-            const content = JSON.stringify(savedPosts, null, 4);
+    return new Promise((resolve, reject) => {
+      const path = `${__dirname}/saved_posts.json`;
 
-            fs.writeFile(path, content, 'utf8', (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(path);
-                }
-            });
-        })
-    })
-    .then(path => {
-        console.log(`File saved at ${path}`);
-    })
-    .catch(err => {
-        console.log(err);
-    })
+      const content = JSON.stringify(savedPosts, null, 4);
+
+      fs.writeFile(path, content, 'utf8', (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(path);
+        }
+      });
+    });
+  })
+  .then((path) => {
+    console.log(`File saved at ${path}`);
+  })
+  .catch((err) => {
+    console.log(err);
+  });

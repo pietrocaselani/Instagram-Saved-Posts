@@ -9,7 +9,13 @@
   "author": "Pietro Caselani",
   "license": "MIT",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "dotenv": "^4.0.0",
     "instagram-private-api": "^0.6.2"
+  },
+  "devDependencies": {
+    "eslint": "^4.9.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-config-airbnb-base": "^12.1.0"
   }
 }
