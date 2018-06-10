@@ -11,7 +11,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "dotenv": "^4.0.0",
-    "instagram-private-api": "^0.6.2"
+    "instagram-private-api": "git+https://github.com/huttarichard/instagram-private-api.git"
   },
   "devDependencies": {
     "eslint": "^4.9.0",
