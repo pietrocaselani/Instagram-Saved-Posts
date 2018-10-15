@@ -1,18 +1,18 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const fs = require('fs');
-const Promise = require('bluebird');
-const SavedPost = require('./saved-post');
+const fs = require("fs");
+const Promise = require("bluebird");
+const SavedPost = require("./saved-post");
 
-const Client = require('instagram-private-api').V1;
+const Client = require("instagram-private-api").V1;
 
-const username = 'insert your username here';
-const password = 'insert your password here';
+const username = "insert your username here";
+const password = "insert your password here";
 
 const device = new Client.Device(username);
 const storage = new Client.CookieMemoryStorage();
 
-const flatten = (ary) => {
+const flatten = ary => {
   let ret = [];
   for (let i = 0; i < ary.length; i += 1) {
     if (Array.isArray(ary[i])) {
@@ -25,16 +25,16 @@ const flatten = (ary) => {
 };
 
 Client.Session.create(device, storage, username, password)
-  .then((session) => {
+  .then(session => {
     return new Client.Feed.SavedMedia(session, 100).all();
   })
-  .then((posts) => {
-    const savedPosts = posts.map((post) => {
+  .then(posts => {
+    const savedPosts = posts.map(post => {
       const { webLink, caption } = post.params;
 
-      const findImagesUrl = (obj) => {
+      const findImagesUrl = obj => {
         if (Array.isArray(obj)) {
-          return obj.map((o) => {
+          return obj.map(o => {
             return findImagesUrl(o);
           });
         }
@@ -47,7 +47,34 @@ Client.Session.create(device, storage, username, password)
         return index % 2 === 0;
       });
 
-      return new SavedPost(webLink, caption, imagesLink);
+      var tokens = caption.split(" ");
+      let hashtags = [];
+      let words = [];
+      let mentions = [];
+      let current = 0;
+      let prev = -1;
+      let next = 1;
+      for (token of tokens) {
+        if (token[0] == "#") {
+          hashtags.push(token);
+        } else if (token[0] == "@") {
+          mentions.push(token);
+        } else {
+          words.push(token);
+        }
+        current++;
+        prev++;
+        next++;
+      }
+
+      return new SavedPost(
+        webLink,
+        caption,
+        imagesLink,
+        hashtags.join(" "),
+        words.join(" "),
+        mentions.join(" ")
+      );
     });
 
     return new Promise((resolve, reject) => {
@@ -55,7 +82,7 @@ Client.Session.create(device, storage, username, password)
 
       const content = JSON.stringify(savedPosts, null, 4);
 
-      fs.writeFile(path, content, 'utf8', (err) => {
+      fs.writeFile(path, content, "utf8", err => {
         if (err) {
           reject(err);
         } else {
@@ -64,9 +91,9 @@ Client.Session.create(device, storage, username, password)
       });
     });
   })
-  .then((path) => {
+  .then(path => {
     console.log(`File saved at ${path}`);
   })
-  .catch((err) => {
+  .catch(err => {
     console.log(err);
   });
