@@ -6,8 +6,8 @@ const SavedPost = require("./saved-post");
 
 const Client = require("instagram-private-api").V1;
 
-const username = "insert your username here";
-const password = "insert your password here";
+const username = "";
+const password = "";
 
 const device = new Client.Device(username);
 const storage = new Client.CookieMemoryStorage();
@@ -47,7 +47,12 @@ Client.Session.create(device, storage, username, password)
         return index % 2 === 0;
       });
 
-      var tokens = caption.split(" ");
+      var tokens = [];
+
+      if (caption) {
+        tokens = caption.split(" ");
+      }
+
       let hashtags = [];
       let words = [];
       let mentions = [];
