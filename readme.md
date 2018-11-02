@@ -6,13 +6,8 @@ Fetch images link and caption for your saved posts on Instagram
 
 * `git clone git@github.com:pietrocaselani/Instagram-Saved-Posts.git`
 * `cd Instagram-Saved-Posts`
-* Change the credentials on `index.js`
-
-```javascript
-const username = 'insert your username here'
-const password = 'insert your password here'
-```
-
+* Change the credentials on `credentials.js`
+* `npm install`
 * `npm start`
 
 ## Author

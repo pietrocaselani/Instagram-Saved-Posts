@@ -3,11 +3,15 @@ require("dotenv").config();
 const fs = require("fs");
 const Promise = require("bluebird");
 const SavedPost = require("./saved-post");
+const Credentials = require("./credentials");
 
 const Client = require("instagram-private-api").V1;
 
-const username = "";
-const password = "";
+const username = Credentials.username;
+const password = Credentials.password;
+
+console.log(username);
+console.log(password);
 
 const device = new Client.Device(username);
 const storage = new Client.CookieMemoryStorage();
