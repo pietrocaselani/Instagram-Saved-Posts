@@ -56,9 +56,6 @@ Client.Session.create(device, storage, username, password)
       let hashtags = [];
       let words = [];
       let mentions = [];
-      let current = 0;
-      let prev = -1;
-      let next = 1;
       for (token of tokens) {
         if (token[0] == "#") {
           hashtags.push(token);
@@ -67,9 +64,6 @@ Client.Session.create(device, storage, username, password)
         } else {
           words.push(token);
         }
-        current++;
-        prev++;
-        next++;
       }
 
       return new SavedPost(
