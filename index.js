@@ -5,16 +5,14 @@ const Promise = require("bluebird");
 const SavedPost = require("./saved-post");
 const Credentials = require("./credentials");
 
-const Client = require("instagram-private-api").V1;
+// const Client = require("instagram-private-api").V1;
+const IgApiClient = require('instagram-private-api');
 
 const username = Credentials.username;
 const password = Credentials.password;
 
 console.log(username);
 console.log(password);
-
-const device = new Client.Device(username);
-const storage = new Client.CookieMemoryStorage();
 
 const flatten = ary => {
   let ret = [];
@@ -28,75 +26,61 @@ const flatten = ary => {
   return ret;
 };
 
-Client.Session.create(device, storage, username, password)
-  .then(session => {
-    return new Client.Feed.SavedMedia(session, 100).all();
-  })
-  .then(posts => {
-    const savedPosts = posts.map(post => {
-      const { webLink, caption } = post.params;
+const urlFromMedia = media => {
+  var width = 0, height = 0;
+  var url = '';
 
-      const findImagesUrl = obj => {
-        if (Array.isArray(obj)) {
-          return obj.map(o => {
-            return findImagesUrl(o);
-          });
-        }
-        return obj.url;
-      };
+  var images = media.image_versions2; //Fetch images
 
-      let imagesLink = flatten(findImagesUrl(post.params.images));
+  if (!images) {
+    images = media.carousel_media; //Fetch images from carusel
+  }
 
-      imagesLink = imagesLink.filter((obj, index) => {
-        return index % 2 === 0;
-      });
+  if (!images) {
+    return null;
+  }
 
-      var tokens = [];
+  const candidates = images.candidates;
 
-      if (caption) {
-        tokens = caption.split(" ");
-      }
-
-      let hashtags = [];
-      let words = [];
-      let mentions = [];
-      for (token of tokens) {
-        if (token[0] == "#") {
-          hashtags.push(token);
-        } else if (token[0] == "@") {
-          mentions.push(token);
-        } else {
-          words.push(token);
-        }
-      }
-
-      return new SavedPost(
-        webLink,
-        caption,
-        imagesLink,
-        hashtags.join(" "),
-        words.join(" "),
-        mentions.join(" ")
-      );
-    });
-
-    return new Promise((resolve, reject) => {
-      const path = `${__dirname}/saved_posts.json`;
-
-      const content = JSON.stringify(savedPosts, null, 4);
-
-      fs.writeFile(path, content, "utf8", err => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(path);
-        }
-      });
-    });
-  })
-  .then(path => {
-    console.log(`File saved at ${path}`);
-  })
-  .catch(err => {
-    console.log(err);
+  candidates.forEach(candidate => {
+    if (candidate.width > width && candidate.height > height) {
+      width = candidate.width;
+      height = candidate.height;
+      url = candidate.url;
+    }
   });
+
+  return url;
+};
+
+const urlsFromItems = items => {
+  return items.map(item => {
+    urlFromMedia(item.media)
+  });
+};
+
+const ig = new IgApiClient.IgApiClient();
+
+ig.state.generateDevice(username);
+
+(async () => {
+  // Execute all requests prior to authorization in the real Android application
+  // Not required but recommended
+  await ig.simulate.preLoginFlow();
+  const loggedInUser = await ig.account.login(username, password);
+  // The same as preLoginFlow()
+  // Optionally wrap it to process.nextTick so we dont need to wait ending of this bunch of requests
+  process.nextTick(async () => await ig.simulate.postLoginFlow());
+
+  const savedFeed = ig.feed.saved(loggedInUser.pk);
+
+  savedFeed.items()
+    .then(items => {
+      return urlsFromItems(items);
+    })
+    .then(urls => {
+      console.log(urls);
+    }).catch(err => {
+      console.log(`Error: ${err}`)
+    });
+})();
