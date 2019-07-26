@@ -26,21 +26,9 @@ const flatten = ary => {
   return ret;
 };
 
-const urlFromMedia = media => {
+const urlsFromCandidates = candidates => {
   var width = 0, height = 0;
   var url = '';
-
-  var images = media.image_versions2; //Fetch images
-
-  if (!images) {
-    images = media.carousel_media; //Fetch images from carusel
-  }
-
-  if (!images) {
-    return null;
-  }
-
-  const candidates = images.candidates;
 
   candidates.forEach(candidate => {
     if (candidate.width > width && candidate.height > height) {
@@ -53,9 +41,29 @@ const urlFromMedia = media => {
   return url;
 };
 
+const urlsFromCarousel = carousel_media => {
+  return carousel_media.map(element => {
+    const x = urlsFromCandidates(element.image_versions2.candidates);
+    return x;
+  });
+};
+
+const urlFromMedia = media => {
+  const images = media.image_versions2;
+
+  if (!images) {
+    // return null;
+    const urls = urlsFromCarousel(media.carousel_media);
+    return urls;
+  }
+
+  const urls = urlsFromCandidates(images.candidates);
+  return urls;
+};
+
 const urlsFromItems = items => {
   return items.map(item => {
-    urlFromMedia(item.media)
+    return urlFromMedia(item.media)
   });
 };
 
@@ -76,10 +84,22 @@ ig.state.generateDevice(username);
 
   savedFeed.items()
     .then(items => {
-      return urlsFromItems(items);
+      return flatten(urlsFromItems(items));
     })
     .then(urls => {
-      console.log(urls);
+      return new Promise((resolve, reject) => {
+        const path = `${__dirname}/saved_posts.json`;
+
+        const content = JSON.stringify(urls, null, 4);
+
+        fs.writeFile(path, content, "utf8", err => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(path);
+          }
+        });
+      });
     }).catch(err => {
       console.log(`Error: ${err}`)
     });
