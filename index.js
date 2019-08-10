@@ -13,18 +13,6 @@ const { username, password } = Credentials;
 
 ig.state.generateDevice(username);
 
-const flatten = (ary) => {
-  let ret = [];
-  for (let i = 0; i < ary.length; i += 1) {
-    if (Array.isArray(ary[i])) {
-      ret = ret.concat(flatten(ary[i]));
-    } else {
-      ret.push(ary[i]);
-    }
-  }
-  return ret;
-};
-
 const urlsFromCandidates = (candidates) => {
   let maxWidth = 0;
   let maxHeight = 0;
