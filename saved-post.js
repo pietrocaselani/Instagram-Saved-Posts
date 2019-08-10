@@ -1,11 +1,8 @@
 class SavedPost {
-  constructor(webLink, caption, imagesLink, hashtags, editedcaption, mentions) {
+  constructor(webLink, caption, imagesLink) {
     this.webLink = webLink;
     this.caption = caption;
     this.imagesLink = imagesLink;
-    this.hashtags = hashtags;
-    this.editedcaption = editedcaption;
-    this.mentions = mentions;
   }
 }
 

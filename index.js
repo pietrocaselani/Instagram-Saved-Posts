@@ -1,20 +1,19 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const fs = require("fs");
-const Promise = require("bluebird");
-const SavedPost = require("./saved-post");
-const Credentials = require("./credentials");
+const fs = require('fs');
+const Promise = require('bluebird');
+const SavedPost = require('./saved-post');
+const Credentials = require('./credentials');
 
-// const Client = require("instagram-private-api").V1;
 const IgApiClient = require('instagram-private-api');
 
-const username = Credentials.username;
-const password = Credentials.password;
+const ig = new IgApiClient.IgApiClient();
 
-console.log(username);
-console.log(password);
+const { username, password } = Credentials;
 
-const flatten = ary => {
+ig.state.generateDevice(username);
+
+const flatten = (ary) => {
   let ret = [];
   for (let i = 0; i < ary.length; i += 1) {
     if (Array.isArray(ary[i])) {
@@ -26,33 +25,34 @@ const flatten = ary => {
   return ret;
 };
 
-const urlsFromCandidates = candidates => {
-  var width = 0, height = 0;
-  var url = '';
+const urlsFromCandidates = (candidates) => {
+  let maxWidth = 0;
+  let maxHeight = 0;
+  let correctURL = '';
 
-  candidates.forEach(candidate => {
-    if (candidate.width > width && candidate.height > height) {
-      width = candidate.width;
-      height = candidate.height;
-      url = candidate.url;
+  candidates.forEach((candidate) => {
+    if (candidate.width > maxWidth && candidate.height > maxHeight) {
+      const { width, height, url } = candidate;
+      maxWidth = width;
+      maxHeight = height;
+      correctURL = url;
     }
   });
 
-  return url;
+  return correctURL;
 };
 
-const urlsFromCarousel = carousel_media => {
-  return carousel_media.map(element => {
+const urlsFromCarousel = (carousel_media) => {
+  return carousel_media.map((element) => {
     const x = urlsFromCandidates(element.image_versions2.candidates);
     return x;
   });
 };
 
-const urlFromMedia = media => {
+const urlFromMedia = (media) => {
   const images = media.image_versions2;
 
   if (!images) {
-    // return null;
     const urls = urlsFromCarousel(media.carousel_media);
     return urls;
   }
@@ -61,38 +61,40 @@ const urlFromMedia = media => {
   return urls;
 };
 
-const urlsFromItems = items => {
-  return items.map(item => {
-    return urlFromMedia(item.media)
+const postFromMedia = (media) => {
+  const webLink = `https://www.instagram.com/p/${media.code}`;
+  const caption = media.caption ? media.caption.text : '';
+  const imagesLink = urlFromMedia(media);
+
+  return new SavedPost(webLink, caption, imagesLink);
+};
+
+
+const postsFromItems = (items) => {
+  return items.map((item) => {
+    return postFromMedia(item);
   });
 };
 
-const ig = new IgApiClient.IgApiClient();
-
-ig.state.generateDevice(username);
-
 (async () => {
-  // Execute all requests prior to authorization in the real Android application
-  // Not required but recommended
   await ig.simulate.preLoginFlow();
   const loggedInUser = await ig.account.login(username, password);
-  // The same as preLoginFlow()
-  // Optionally wrap it to process.nextTick so we dont need to wait ending of this bunch of requests
-  process.nextTick(async () => await ig.simulate.postLoginFlow());
+
+  process.nextTick(async () => ig.simulate.postLoginFlow());
 
   const savedFeed = ig.feed.saved(loggedInUser.pk);
 
   savedFeed.items()
-    .then(items => {
-      return flatten(urlsFromItems(items));
+    .then((items) => {
+      return postsFromItems(items);
     })
-    .then(urls => {
+    .then((posts) => {
       return new Promise((resolve, reject) => {
         const path = `${__dirname}/saved_posts.json`;
 
-        const content = JSON.stringify(urls, null, 4);
+        const content = JSON.stringify(posts, null, 2);
 
-        fs.writeFile(path, content, "utf8", err => {
+        fs.writeFile(path, content, 'utf8', (err) => {
           if (err) {
             reject(err);
           } else {
@@ -100,7 +102,8 @@ ig.state.generateDevice(username);
           }
         });
       });
-    }).catch(err => {
-      console.log(`Error: ${err}`)
+    })
+    .catch((err) => {
+      console.log(`Error: ${err}`);
     });
 })();
