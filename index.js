@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const fs = require('fs');
-const Promise = require('bluebird');
 const SavedPost = require('./saved-post');
 const Credentials = require('./credentials');
 
@@ -64,6 +63,17 @@ const postsFromItems = (items) => {
   });
 };
 
+const fetchPostsRecursive = async (savedFeed, posts) => {
+  const items = await savedFeed.items();
+  const allPosts = posts.concat(postsFromItems(items));
+  return savedFeed.isMoreAvailable() ? fetchPostsRecursive(savedFeed, allPosts) : allPosts;
+};
+
+const fetchPosts = async (savedFeed) => {
+  const allPosts = [];
+  return fetchPostsRecursive(savedFeed, allPosts);
+};
+
 (async () => {
   await ig.simulate.preLoginFlow();
   const loggedInUser = await ig.account.login(username, password);
@@ -72,10 +82,7 @@ const postsFromItems = (items) => {
 
   const savedFeed = ig.feed.saved(loggedInUser.pk);
 
-  savedFeed.items()
-    .then((items) => {
-      return postsFromItems(items);
-    })
+  fetchPosts(savedFeed)
     .then((posts) => {
       return new Promise((resolve, reject) => {
         const path = `${__dirname}/saved_posts.json`;
@@ -90,6 +97,9 @@ const postsFromItems = (items) => {
           }
         });
       });
+    })
+    .then((path) => {
+      console.log(`Posts saved in ${path}`);
     })
     .catch((err) => {
       console.log(`Error: ${err}`);

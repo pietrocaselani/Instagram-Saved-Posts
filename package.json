@@ -9,7 +9,6 @@
   "author": "Pietro Caselani",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^3.5.1",
     "dotenv": "^4.0.0",
     "instagram-private-api": "^1.21.0"
   },
