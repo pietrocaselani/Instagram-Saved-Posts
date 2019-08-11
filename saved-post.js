@@ -1,6 +1,7 @@
 class SavedPost {
-  constructor(webLink, caption, imagesLink) {
+  constructor(webLink, code, caption, imagesLink) {
     this.webLink = webLink;
+    this.code = code;
     this.caption = caption;
     this.imagesLink = imagesLink;
   }

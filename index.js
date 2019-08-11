@@ -26,34 +26,34 @@ const urlsFromCandidates = (candidates) => {
     }
   });
 
-  return correctURL;
+  return [correctURL];
 };
 
 const urlsFromCarousel = (carousel_media) => {
-  return carousel_media.map((element) => {
-    const x = urlsFromCandidates(element.image_versions2.candidates);
-    return x;
+  const urls = carousel_media.map((element) => {
+    return urlsFromCandidates(element.image_versions2.candidates);
   });
+
+  return [].concat(...urls);
 };
 
 const urlFromMedia = (media) => {
   const images = media.image_versions2;
 
   if (!images) {
-    const urls = urlsFromCarousel(media.carousel_media);
-    return urls;
+    return urlsFromCarousel(media.carousel_media);
   }
 
-  const urls = urlsFromCandidates(images.candidates);
-  return urls;
+  return urlsFromCandidates(images.candidates);
 };
 
 const postFromMedia = (media) => {
-  const webLink = `https://www.instagram.com/p/${media.code}`;
+  const { code } = media;
+  const webLink = `https://www.instagram.com/p/${code}`;
   const caption = media.caption ? media.caption.text : '';
   const imagesLink = urlFromMedia(media);
 
-  return new SavedPost(webLink, caption, imagesLink);
+  return new SavedPost(webLink, code, caption, imagesLink);
 };
 
 
